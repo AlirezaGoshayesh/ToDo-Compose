@@ -8,8 +8,8 @@ import java.util.Date
 
 @Entity
 data class ToDoEntry(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    @ColumnInfo(name = "category_id") val categoryId: Int,
+    @PrimaryKey(autoGenerate = true) @ColumnInfo(name = "entry_id") val id: Int = 0,
+    @ColumnInfo(name = "category_id_ext") val categoryId: Int,
     @ColumnInfo(name = "title") val title: String,
     @ColumnInfo(name = "desc") val desc: String,
     @ColumnInfo(name = "date") val date: Date,

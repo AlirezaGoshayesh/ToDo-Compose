@@ -11,7 +11,7 @@ import java.util.Date
 
 @Dao
 interface ToDoEntryDao {
-    @Query("SELECT * FROM ToDoEntry Where id = :id")
+    @Query("SELECT * FROM ToDoEntry Where entry_id = :id")
     suspend fun getEntry(id: Int): ToDoEntry
 
     @Insert

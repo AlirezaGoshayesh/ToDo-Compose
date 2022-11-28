@@ -2,21 +2,21 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "f8514153740f98d466efa084b0dc5a19",
+    "identityHash": "6e7545d2aa937c7faa37cf6e90cb02fe",
     "entities": [
       {
         "tableName": "ToDoEntry",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `category_id` INTEGER NOT NULL, `title` TEXT NOT NULL, `desc` TEXT NOT NULL, `date` INTEGER NOT NULL, `isDone` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`entry_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `category_id_ext` INTEGER NOT NULL, `title` TEXT NOT NULL, `desc` TEXT NOT NULL, `date` INTEGER NOT NULL, `isDone` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
-            "columnName": "id",
+            "columnName": "entry_id",
             "affinity": "INTEGER",
             "notNull": true
           },
           {
             "fieldPath": "categoryId",
-            "columnName": "category_id",
+            "columnName": "category_id_ext",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -47,7 +47,7 @@
         ],
         "primaryKey": {
           "columnNames": [
-            "id"
+            "entry_id"
           ],
           "autoGenerate": true
         },
@@ -56,11 +56,11 @@
       },
       {
         "tableName": "ToDoCategory",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `color` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`category_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `color` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
-            "columnName": "id",
+            "columnName": "category_id",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -79,7 +79,7 @@
         ],
         "primaryKey": {
           "columnNames": [
-            "id"
+            "category_id"
           ],
           "autoGenerate": true
         },
@@ -90,7 +90,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f8514153740f98d466efa084b0dc5a19')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '6e7545d2aa937c7faa37cf6e90cb02fe')"
     ]
   }
 }

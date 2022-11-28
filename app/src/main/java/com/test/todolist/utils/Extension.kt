@@ -1,15 +1,20 @@
 package com.test.todolist.utils
 
+import androidx.compose.ui.graphics.Color
+import androidx.core.graphics.ColorUtils
 import com.test.todolist.data.models.ToDoCategory
 import com.test.todolist.data.models.ToDoEntry
 
 fun Map<ToDoCategory, List<ToDoEntry>>.filterTodayAndConvertToPairs(): List<Pair<ToDoCategory, ToDoEntry>> {
-    val map = HashMap(this)
-    map.forEach { entry ->
-        entry.value.filter { toDoEntry ->
-            toDoEntry.date in DateUtils.atStartOfDay(DateUtils.getToday())..DateUtils.atEndOfDay(
-                DateUtils.getToday()
-            )
+    val map = hashMapOf<ToDoCategory, List<ToDoEntry>>()
+    this.keys.forEach { entry ->
+        val list = this[entry]
+        if (list != null) {
+            map[entry] = list.filter { toDoEntry ->
+                toDoEntry.date in DateUtils.atStartOfDay(DateUtils.getToday())..DateUtils.atEndOfDay(
+                    DateUtils.getToday()
+                )
+            }
         }
     }
     val list = mutableListOf<Pair<ToDoCategory, ToDoEntry>>()
@@ -19,4 +24,10 @@ fun Map<ToDoCategory, List<ToDoEntry>>.filterTodayAndConvertToPairs(): List<Pair
         }
     }
     return list.sortedBy { it.second.date }
+}
+
+fun Int.getContrastColor(): Color {
+    val contrast = ColorUtils.calculateContrast(android.graphics.Color.WHITE, this)
+    return if (contrast > 1.5)
+        Color.White else Color.Black
 }

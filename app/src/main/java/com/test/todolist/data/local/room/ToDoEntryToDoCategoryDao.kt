@@ -12,7 +12,7 @@ import java.util.Date
 @Dao
 interface ToDoEntryToDoCategoryDao {
     @Query(
-        "SELECT * FROM TODOCATEGORY" + " LEFT JOIN ToDoEntry ON TODOCATEGORY.id = ToDoEntry.category_id"
+        "SELECT * FROM TODOCATEGORY" + " LEFT JOIN ToDoEntry ON TODOCATEGORY.category_id = ToDoEntry.category_id_ext"
     )
     suspend fun getAll(): Map<ToDoCategory, List<ToDoEntry>>
 

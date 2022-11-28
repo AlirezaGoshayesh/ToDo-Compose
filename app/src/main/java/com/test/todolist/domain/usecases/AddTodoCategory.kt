@@ -5,13 +5,20 @@ import com.test.todolist.domain.Repository
 import com.test.todolist.domain.base.UseCase
 import com.test.todolist.domain.exceptions.IErrorHandler
 import javax.inject.Inject
+import kotlin.random.Random
 
 class AddTodoCategory @Inject constructor(
     private val repository: Repository,
     errorHandler: IErrorHandler
 ) : UseCase<String, Unit>(errorHandler) {
     override suspend fun execute(parameters: String) {
-        val color = Color.argb(255, (0..255).random(), (0..255).random(), (0..255).random())
+        val randomGenerator = Random(System.currentTimeMillis())
+        val color = Color.argb(
+            255,
+            randomGenerator.nextInt(0, 255),
+            randomGenerator.nextInt(0, 255),
+            randomGenerator.nextInt(0, 255)
+        )
         return repository.addToDoCategory(parameters, color)
     }
 }

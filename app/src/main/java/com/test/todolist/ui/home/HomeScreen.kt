@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -32,12 +33,14 @@ import com.test.todolist.data.models.ToDoCategory
 import com.test.todolist.data.models.ToDoEntry
 import com.test.todolist.domain.base.Resource
 import com.test.todolist.ui.Screen
+import com.test.todolist.ui.addCategory.AddCategoryDialog
 import com.test.todolist.utils.filterTodayAndConvertToPairs
 import kotlinx.coroutines.launch
+import java.util.*
 
 @Composable
 fun HomeScreen(
-    navController: NavController, viewModel: HomeVM
+    navController: NavController, viewModel: TasksVM
 ) {
     val scaffoldState = rememberScaffoldState()
     val coroutineScope = rememberCoroutineScope()
@@ -77,7 +80,7 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(it)
-                .padding(16.dp)
+                .padding(12.dp)
                 .background(MaterialTheme.colors.background)
         ) {
             val entries by viewModel.toDoEntries
@@ -87,28 +90,36 @@ fun HomeScreen(
                 )
                 is Resource.Loading -> Loading()
                 is Resource.Success -> {
+                    var openAddCategoryDialog by remember { mutableStateOf(false) }
                     CategoriesSection(
                         allData = (entries as Resource.Success).data,
                         canAddTask,
                         onClick = {
-                            //TODO add category
-                            viewModel.addToDoCategory(getRandomString((3..6).random()))
+                            openAddCategoryDialog = true
                         })
+                    if (openAddCategoryDialog)
+                        AddCategoryDialog(
+                            onClick = { name ->
+                                viewModel.addToDoCategory(name = name)
+                                openAddCategoryDialog = false
+                            },
+                            onDismiss = { openAddCategoryDialog = false },
+                            categories = (entries as Resource.Success).data.keys.map { toDoCategory ->
+                                toDoCategory.name.lowercase(
+                                    Locale.ROOT
+                                )
+                            }
+                        )
                     Spacer(modifier = Modifier.height(12.dp))
                     TodayToDoList(
                         todayData = (entries as Resource.Success).data.filterTodayAndConvertToPairs(),
-                        onClick = {})
+                        onClick = { toDoEntry ->
+                            viewModel.editToDoEntry(toDoEntry)
+                        })
                 }
             }
         }
     })
-}
-
-fun getRandomString(length: Int): String {
-    val allowedChars = ('A'..'Z') + ('a'..'z')
-    return (1..length)
-        .map { allowedChars.random() }
-        .joinToString("")
 }
 
 @Composable
@@ -133,8 +144,7 @@ fun CategoriesSection(
         canAddTask.value = categories.isNotEmpty()
         LazyRow(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(4.dp),
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start,
             contentPadding = PaddingValues(4.dp)
@@ -144,13 +154,13 @@ fun CategoriesSection(
                 CategorySection(
                     category,
                     allData[category]!!,
-                    modifier = Modifier.size(width = 200.dp, height = 120.dp)
+                    modifier = Modifier.size(width = 200.dp, height = 140.dp)
                 )
             }
             item {
                 AddCategorySection(
                     onClick = onClick,
-                    modifier = Modifier.size(120.dp)
+                    modifier = Modifier.size(140.dp)
                 )
             }
         }
@@ -163,7 +173,7 @@ fun AddCategorySection(onClick: () -> Unit, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier
             .padding(8.dp)
-            .clickable { onClick.invoke() }, elevation = 4.dp, shape = RoundedCornerShape(16.dp)
+            .clickable { onClick.invoke() }, elevation = 2.dp, shape = RoundedCornerShape(16.dp)
     ) {
         Icon(
             imageVector = Icons.Default.Add,
@@ -178,7 +188,7 @@ fun AddCategorySection(onClick: () -> Unit, modifier: Modifier = Modifier) {
 fun CategorySection(category: ToDoCategory, tasks: List<ToDoEntry>, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier
-            .padding(8.dp), elevation = 4.dp, shape = RoundedCornerShape(16.dp)
+            .padding(8.dp), elevation = 2.dp, shape = RoundedCornerShape(16.dp)
     ) {
         Column(
             modifier = Modifier.padding(8.dp),
@@ -200,7 +210,9 @@ fun CategorySection(category: ToDoCategory, tasks: List<ToDoEntry>, modifier: Mo
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            val indicatorProgress = tasks.filter { it.isDone }.size.toFloat() / tasks.size
+            var indicatorProgress = tasks.filter { it.isDone }.size.toFloat() / tasks.size
+            if (!indicatorProgress.isNaN())
+                indicatorProgress = 0f
             val progressAnimation by animateFloatAsState(
                 targetValue = indicatorProgress,
                 animationSpec = tween(durationMillis = 1000, easing = FastOutSlowInEasing)
@@ -210,7 +222,7 @@ fun CategorySection(category: ToDoCategory, tasks: List<ToDoEntry>, modifier: Mo
                     .fillMaxWidth()
                     .clip(MaterialTheme.shapes.medium)
                     .height(8.dp),
-                progress = if (!indicatorProgress.isNaN()) progressAnimation else 0f,
+                progress = progressAnimation,
                 backgroundColor = Color.LightGray,
                 color = Color(category.color)
             )
@@ -292,41 +304,48 @@ fun ToDoSection(
     modifier: Modifier = Modifier
 ) {
     val isCheck = todo.second.isDone
-    Row(
-        modifier = modifier
-            .clip(shape = RoundedCornerShape(16.dp))
-            .shadow(elevation = 4.dp, shape = RoundedCornerShape(16.dp)),
-        horizontalArrangement = Arrangement.Start,
-        verticalAlignment = Alignment.CenterVertically
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        elevation = 4.dp
     ) {
-        Card(
-            modifier = Modifier.background(MaterialTheme.colors.background),
-            elevation = 0.dp,
-            shape = CircleShape,
-            border = if (isCheck) null else BorderStroke(1.5.dp, color = Color(todo.first.color))
+        Row(
+            modifier = Modifier
+                .background(MaterialTheme.colors.background)
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
                 modifier = Modifier
-                    .size(24.dp)
-                    .background(if (isCheck) Color.LightGray else MaterialTheme.colors.background)
+                    .size(28.dp)
+                    .background(if (isCheck) Color.LightGray else Color.Transparent, CircleShape)
+                    .border(
+                        if (isCheck) BorderStroke(
+                            0.dp,
+                            Color.Transparent
+                        ) else BorderStroke(2.dp, Color(todo.first.color)), CircleShape
+                    )
                     .clickable {
                         onClick(todo.second)
                     },
                 contentAlignment = Alignment.CenterStart
             ) {
                 if (isCheck)
-                    Icon(Icons.Default.Check, contentDescription = null, tint = Color.White)
+                    Icon(
+                        Icons.Default.Check,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
             }
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                fontSize = 16.sp,
+                text = todo.second.title,
+                textDecoration = if (isCheck) TextDecoration.LineThrough else TextDecoration.None
+            )
         }
-
-        Text(
-            modifier = Modifier
-                .align(Alignment.CenterVertically)
-                .padding(start = 12.dp),
-            fontSize = 16.sp,
-            text = todo.second.title,
-            textDecoration = if (isCheck) TextDecoration.LineThrough else TextDecoration.None
-        )
     }
 }
 
