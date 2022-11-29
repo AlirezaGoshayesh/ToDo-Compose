@@ -1,7 +1,5 @@
 package com.test.todolist.ui.home
 
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.test.todolist.data.models.ToDoCategory
@@ -9,6 +7,9 @@ import com.test.todolist.data.models.ToDoEntry
 import com.test.todolist.domain.base.Resource
 import com.test.todolist.domain.usecases.*
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.*
 import javax.inject.Inject
@@ -23,12 +24,12 @@ class TasksVM @Inject constructor(
 ) : ViewModel() {
 
     private val _toDoEntries =
-        mutableStateOf<Resource<Map<ToDoCategory, List<ToDoEntry>>>>(Resource.Loading)
-    val toDoEntries: State<Resource<Map<ToDoCategory, List<ToDoEntry>>>> get() = _toDoEntries
+        MutableStateFlow<Resource<Map<ToDoCategory, List<ToDoEntry>>>>(Resource.Loading)
+    val toDoEntries: StateFlow<Resource<Map<ToDoCategory, List<ToDoEntry>>>> get() = _toDoEntries.asStateFlow()
 
     private val _toDoCategories =
-        mutableStateOf<Resource<List<ToDoCategory>>>(Resource.Loading)
-    val toDoCategories: State<Resource<List<ToDoCategory>>> get() = _toDoCategories
+        MutableStateFlow<Resource<List<ToDoCategory>>>(Resource.Loading)
+    val toDoCategories: StateFlow<Resource<List<ToDoCategory>>> get() = _toDoCategories.asStateFlow()
 
     init {
         getToDoEntries()
@@ -39,6 +40,7 @@ class TasksVM @Inject constructor(
      */
     private fun getToDoEntries() {
         viewModelScope.launch {
+            _toDoEntries.value = Resource.Loading
             _toDoEntries.value = getAllTodoEntries(Unit)
         }
 

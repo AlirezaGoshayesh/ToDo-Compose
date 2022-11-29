@@ -9,6 +9,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -24,7 +26,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -76,13 +81,14 @@ fun AddScreen(
                 .padding(16.dp)
                 .background(MaterialTheme.colors.background)
         ) {
-            val categories by viewModel.toDoCategories
+            val categories by viewModel.toDoCategories.collectAsState()
             when (categories) {
                 is Resource.Error -> ErrorBox(
                     text = (categories as Resource.Error).errorModel.getErrorMessage()
                 )
                 is Resource.Loading -> Loading()
                 is Resource.Success -> {
+                    val localFocusManager = LocalFocusManager.current
                     var openCategoriesDialog by remember { mutableStateOf(false) }
                     val selectedDate = remember {
                         mutableStateOf(Date())
@@ -108,6 +114,13 @@ fun AddScreen(
                             unfocusedIndicatorColor = Color.Transparent,
                             disabledIndicatorColor = Color.Transparent
                         ),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Text,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(onDone = {
+                            localFocusManager.clearFocus()
+                        }),
                         placeholder = { Text(text = "Enter new task", fontSize = 24.sp) },
                         singleLine = true
                     )

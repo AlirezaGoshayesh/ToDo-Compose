@@ -50,11 +50,7 @@ fun HomeScreen(
     Scaffold(scaffoldState = scaffoldState, topBar = {
         TopAppBar(
             title = {
-                Text(
-                    text = "What's my task!?",
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
+
             },
             backgroundColor = MaterialTheme.colors.background,
             contentColor = MaterialTheme.colors.onBackground,
@@ -83,12 +79,18 @@ fun HomeScreen(
                 .padding(12.dp)
                 .background(MaterialTheme.colors.background)
         ) {
-            val entries by viewModel.toDoEntries
+            Text(
+                text = "What's my task!?",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            val entries by viewModel.toDoEntries.collectAsState()
             when (entries) {
                 is Resource.Error -> ErrorBox(
                     text = (entries as Resource.Error).errorModel.getErrorMessage()
                 )
-                is Resource.Loading -> Loading()
+                is Resource.Loading -> {
+                }
                 is Resource.Success -> {
                     var openAddCategoryDialog by remember { mutableStateOf(false) }
                     CategoriesSection(
@@ -210,12 +212,13 @@ fun CategorySection(category: ToDoCategory, tasks: List<ToDoEntry>, modifier: Mo
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+            var progress by remember { mutableStateOf(0f) }
             var indicatorProgress = tasks.filter { it.isDone }.size.toFloat() / tasks.size
-            if (!indicatorProgress.isNaN())
+            if (indicatorProgress.isNaN())
                 indicatorProgress = 0f
             val progressAnimation by animateFloatAsState(
-                targetValue = indicatorProgress,
-                animationSpec = tween(durationMillis = 1000, easing = FastOutSlowInEasing)
+                targetValue = progress,
+                animationSpec = tween(durationMillis = 1500, easing = FastOutSlowInEasing)
             )
             LinearProgressIndicator(
                 modifier = Modifier
@@ -226,6 +229,9 @@ fun CategorySection(category: ToDoCategory, tasks: List<ToDoEntry>, modifier: Mo
                 backgroundColor = Color.LightGray,
                 color = Color(category.color)
             )
+            LaunchedEffect(true) {
+                progress = indicatorProgress
+            }
         }
     }
 }
@@ -284,7 +290,7 @@ fun TodayToDoList(
     else LazyColumn(
         modifier = modifier.fillMaxWidth(),
         contentPadding = PaddingValues(8.dp),
-        verticalArrangement = Arrangement.Top,
+        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         items(todayData.size) {
