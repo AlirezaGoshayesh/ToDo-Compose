@@ -69,7 +69,8 @@ dependencies {
     //hilt
     implementation "com.google.dagger:hilt-android:2.44"
     kapt "com.google.dagger:hilt-compiler:2.44"
-
+    //icons
+    implementation "androidx.compose.material:material-icons-extended:$compose_ui_version"
     //room
     def room_version = "2.4.3"
     implementation "androidx.room:room-runtime:$room_version"

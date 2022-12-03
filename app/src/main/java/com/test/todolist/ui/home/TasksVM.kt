@@ -7,6 +7,7 @@ import com.test.todolist.data.models.ToDoEntry
 import com.test.todolist.domain.base.Resource
 import com.test.todolist.domain.usecases.*
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -41,6 +42,7 @@ class TasksVM @Inject constructor(
     private fun getToDoEntries() {
         viewModelScope.launch {
             _toDoEntries.value = Resource.Loading
+            delay(500)
             _toDoEntries.value = getAllTodoEntries(Unit)
         }
 

@@ -14,13 +14,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -50,23 +49,50 @@ fun HomeScreen(
     Scaffold(scaffoldState = scaffoldState, topBar = {
         TopAppBar(
             title = {
-
+            },
+            navigationIcon = {
+                IconButton(onClick = { /*TODO*/ }) {
+                    Icon(
+                        imageVector = Icons.Default.DragHandle,
+                        contentDescription = null,
+                        tint = Color.Gray
+                    )
+                }
+            },
+            actions = {
+                IconButton(onClick = { /*TODO*/ }) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = null,
+                        tint = Color.Gray
+                    )
+                }
+                IconButton(onClick = { /*TODO*/ }) {
+                    Icon(
+                        imageVector = Icons.Outlined.Notifications,
+                        contentDescription = null,
+                        tint = Color.Gray
+                    )
+                }
             },
             backgroundColor = MaterialTheme.colors.background,
             contentColor = MaterialTheme.colors.onBackground,
             elevation = 0.dp
         )
     }, floatingActionButtonPosition = FabPosition.End, floatingActionButton = {
-        FloatingActionButton(onClick = {
-            if (canAddTask.value)
-                navController.navigate(Screen.AddScreen.route)
-            else
-                coroutineScope.launch {
-                    scaffoldState.snackbarHostState.showSnackbar(
-                        message = "First, add a category!"
-                    )
-                }
-        }) {
+        FloatingActionButton(
+            backgroundColor = MaterialTheme.colors.primary,
+            contentColor = MaterialTheme.colors.onPrimary,
+            onClick = {
+                if (canAddTask.value)
+                    navController.navigate(Screen.AddScreen.route)
+                else
+                    coroutineScope.launch {
+                        scaffoldState.snackbarHostState.showSnackbar(
+                            message = "First, add a category!"
+                        )
+                    }
+            }) {
             Icon(imageVector = Icons.Default.Add, contentDescription = "fab icon")
         }
     }, content = {
@@ -84,13 +110,13 @@ fun HomeScreen(
                 fontSize = 28.sp,
                 fontWeight = FontWeight.SemiBold
             )
+            Spacer(modifier = Modifier.height(36.dp))
             val entries by viewModel.toDoEntries.collectAsState()
             when (entries) {
                 is Resource.Error -> ErrorBox(
                     text = (entries as Resource.Error).errorModel.getErrorMessage()
                 )
-                is Resource.Loading -> {
-                }
+                is Resource.Loading -> Loading()
                 is Resource.Success -> {
                     var openAddCategoryDialog by remember { mutableStateOf(false) }
                     CategoriesSection(
@@ -112,7 +138,7 @@ fun HomeScreen(
                                 )
                             }
                         )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
                     TodayToDoList(
                         todayData = (entries as Resource.Success).data.filterTodayAndConvertToPairs(),
                         onClick = { toDoEntry ->
@@ -175,7 +201,7 @@ fun AddCategorySection(onClick: () -> Unit, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier
             .padding(8.dp)
-            .clickable { onClick.invoke() }, elevation = 2.dp, shape = RoundedCornerShape(16.dp)
+            .clickable { onClick.invoke() }, elevation = 0.dp, shape = RoundedCornerShape(16.dp)
     ) {
         Icon(
             imageVector = Icons.Default.Add,
@@ -190,7 +216,7 @@ fun AddCategorySection(onClick: () -> Unit, modifier: Modifier = Modifier) {
 fun CategorySection(category: ToDoCategory, tasks: List<ToDoEntry>, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier
-            .padding(8.dp), elevation = 2.dp, shape = RoundedCornerShape(16.dp)
+            .padding(8.dp), elevation = 0.dp, shape = RoundedCornerShape(16.dp)
     ) {
         Column(
             modifier = Modifier.padding(8.dp),
@@ -261,7 +287,14 @@ fun ErrorBox(
 
 @Composable
 fun Loading(modifier: Modifier = Modifier) {
-    CircularProgressIndicator(modifier.size(48.dp))
+    Box(modifier = modifier.fillMaxWidth()) {
+        CircularProgressIndicator(
+            modifier
+                .size(64.dp)
+                .align(Alignment.Center)
+                .padding(8.dp)
+        )
+    }
 }
 
 @Composable
@@ -313,18 +346,17 @@ fun ToDoSection(
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
-        elevation = 4.dp
+        elevation = 0.dp
     ) {
         Row(
             modifier = Modifier
-                .background(MaterialTheme.colors.background)
-                .padding(12.dp),
+                .padding(16.dp),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
                 modifier = Modifier
-                    .size(28.dp)
+                    .size(24.dp)
                     .background(if (isCheck) Color.LightGray else Color.Transparent, CircleShape)
                     .border(
                         if (isCheck) BorderStroke(
@@ -351,38 +383,6 @@ fun ToDoSection(
                 text = todo.second.title,
                 textDecoration = if (isCheck) TextDecoration.LineThrough else TextDecoration.None
             )
-        }
-    }
-}
-
-@Composable
-fun ToDo(
-    todo: ToDoEntry, modifier: Modifier = Modifier
-) {
-    Row(
-        verticalAlignment = Alignment.Bottom,
-        horizontalArrangement = Arrangement.SpaceBetween,
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(Color.LightGray)
-    ) {
-        Column(
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier
-                .padding(4.dp)
-                .weight(1f)
-        ) {
-            Text(
-                text = todo.title,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(text = todo.desc, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
