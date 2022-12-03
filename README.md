@@ -2,7 +2,7 @@
 
 A short-time project that uses the most recent technologies, libraries and best practices(Compose UI as main feature).
 
-![icon](app/src/main/res/mipmap-hdpi/ic_launcher.png)
+<img src="https://github.com/AlirezaGoshayesh/ToDo-Compose/blob/main/shots/Shot1.jpg" width="300" height="700">
 
 Technologies and libraries:
 - Single Activity
