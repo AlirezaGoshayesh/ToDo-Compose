@@ -21,7 +21,8 @@ class TasksVM @Inject constructor(
     private val editTodoEntry: EditTodoEntry,
     private val addTodoCategory: AddTodoCategory,
     private val getTodoCategories: GetTodoCategories,
-    private val addTodoEntry: AddTodoEntry
+    private val addTodoEntry: AddTodoEntry,
+    private val deleteTodoEntry: DeleteTodoEntry
 ) : ViewModel() {
 
     private val _toDoEntries =
@@ -91,6 +92,16 @@ class TasksVM @Inject constructor(
     fun addToDoCategory(name: String) {
         viewModelScope.launch {
             addTodoCategory(name)
+            getToDoEntries()
+        }
+    }
+
+    /**
+     * Called to delete To Do Entry
+     */
+    fun deleteTodo(todoEntry: ToDoEntry) {
+        viewModelScope.launch {
+            deleteTodoEntry(todoEntry)
             getToDoEntries()
         }
     }

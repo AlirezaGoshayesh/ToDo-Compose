@@ -8,6 +8,9 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -24,11 +27,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -44,9 +51,12 @@ import com.test.todolist.ui.theme.Blue900
 import com.test.todolist.utils.DateUtils
 import com.test.todolist.utils.DateUtils.calculateDateText
 import com.test.todolist.utils.filterDayAndConvertToPairs
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 @Composable
 fun HomeScreen(
@@ -192,7 +202,11 @@ fun HomeScreen(
                             ),
                             onClick = { toDoEntry ->
                                 viewModel.editToDoEntry(toDoEntry)
-                            })
+                            },
+                            onDelete = { toDoEntry ->
+                                viewModel.deleteTodo(toDoEntry)
+                            }
+                        )
                     }
                 }
             }
@@ -351,6 +365,7 @@ fun TodayToDoList(
     dateText: String,
     todayData: List<Pair<ToDoCategory, ToDoEntry>>,
     onClick: (todo: ToDoEntry) -> Unit,
+    onDelete: (todo: ToDoEntry) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -380,6 +395,7 @@ fun TodayToDoList(
             ToDoSection(
                 todo = todayData[it],
                 onClick = onClick,
+                onDelete = onDelete,
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -390,82 +406,136 @@ fun TodayToDoList(
 fun ToDoSection(
     todo: Pair<ToDoCategory, ToDoEntry>,
     onClick: (todo: ToDoEntry) -> Unit,
+    onDelete: (todo: ToDoEntry) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var cardWidth by remember {
+        mutableStateOf(0f)
+    }
+    var isDragged by remember {
+        mutableStateOf(false)
+    }
     val isCheck = todo.second.isDone
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        elevation = 0.dp
-    ) {
-        var isExpanded by remember {
-            mutableStateOf(false)
+    var offsetX by remember { mutableStateOf(0f) }
+    LaunchedEffect(key1 = isDragged) {
+        if (isDragged) {
+            delay(3000)
+            onDelete(todo.second)
         }
-        val rotateState by animateFloatAsState(
-            targetValue = if (isExpanded) 180F else 0F,
-        )
-        Column(
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .padding(16.dp)
+    }
+    if (isDragged)
+        Row(
+            modifier,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically,
+            Icon(imageVector = Icons.Default.Delete, contentDescription = null, tint = Color.Gray)
+            Text(text = "The task was deleted", color = Color.Gray)
+            OutlinedButton(
+                onClick = {
+                    isDragged = false
+                    offsetX = 0f
+                },
+                border = BorderStroke(0.5.dp, Color.Gray),
+                shape = MaterialTheme.shapes.medium,
+                colors = ButtonDefaults.buttonColors(backgroundColor = Color.Transparent)
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(24.dp)
-                        .background(
-                            if (isCheck) Color.LightGray else Color.Transparent,
-                            CircleShape
-                        )
-                        .border(
-                            if (isCheck) BorderStroke(
-                                0.dp,
-                                Color.Transparent
-                            ) else BorderStroke(2.dp, Color(todo.first.color)), CircleShape
-                        )
-                        .clickable {
-                            onClick(todo.second)
-                        },
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    if (isCheck)
-                        Icon(
-                            Icons.Default.Check,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.align(Alignment.Center)
-                        )
+                Text(text = "UNDO", color = Color.Gray, modifier = Modifier.padding(2.dp))
+            }
+        }
+    else {
+        Card(
+            modifier = modifier
+                .onGloballyPositioned { coordinates ->
+                    cardWidth = (coordinates.size.width.toFloat())
                 }
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    fontSize = 16.sp,
-                    text = todo.second.title,
-                    textDecoration = if (isCheck) TextDecoration.LineThrough else TextDecoration.None
-                )
-                if (todo.second.desc.isNotEmpty()) {
-                    Spacer(modifier = Modifier.weight(1f))
-                    Icon(
+                .offset { IntOffset(offsetX.roundToInt(), 0) }
+                .pointerInput(Unit) {
+                    detectDragGestures(onDrag = { change, dragAmount ->
+                        change.consume()
+                        val (x) = dragAmount
+                        if (x < 0) {
+                            offsetX += dragAmount.x
+                        }
+                    }, onDragEnd = {
+                        if (abs(offsetX) > 0.5f * cardWidth)
+                            isDragged = true
+                        else
+                            offsetX = 0f
+                    })
+                },
+            shape = RoundedCornerShape(16.dp),
+            elevation = 0.dp
+        ) {
+            var isExpanded by remember {
+                mutableStateOf(false)
+            }
+            val rotateState by animateFloatAsState(
+                targetValue = if (isExpanded) 180F else 0F,
+            )
+            Column(
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .padding(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
                         modifier = Modifier
-                            .clickable { isExpanded = !isExpanded }
-                            .rotate(rotateState),
-                        imageVector = Icons.Default.ArrowDropDown,
-                        contentDescription = null
+                            .size(24.dp)
+                            .background(
+                                if (isCheck) Color.LightGray else Color.Transparent,
+                                CircleShape
+                            )
+                            .border(
+                                if (isCheck) BorderStroke(
+                                    0.dp,
+                                    Color.Transparent
+                                ) else BorderStroke(2.dp, Color(todo.first.color)), CircleShape
+                            )
+                            .clickable {
+                                onClick(todo.second)
+                            },
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        if (isCheck)
+                            Icon(
+                                Icons.Default.Check,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.align(Alignment.Center)
+                            )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        fontSize = 16.sp,
+                        text = todo.second.title,
+                        textDecoration = if (isCheck) TextDecoration.LineThrough else TextDecoration.None
+                    )
+                    if (todo.second.desc.isNotEmpty()) {
+                        Spacer(modifier = Modifier.weight(1f))
+                        Icon(
+                            modifier = Modifier
+                                .clickable { isExpanded = !isExpanded }
+                                .rotate(rotateState),
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = null
+                        )
+                    }
+                }
+                AnimatedVisibility(visible = isExpanded) {
+                    Text(
+                        text = todo.second.desc,
+                        fontSize = 14.sp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
                     )
                 }
-            }
-            AnimatedVisibility(visible = isExpanded) {
-                Text(
-                    text = todo.second.desc,
-                    fontSize = 14.sp,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp)
-                )
             }
         }
     }
