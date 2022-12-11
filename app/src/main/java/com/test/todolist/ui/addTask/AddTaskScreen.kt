@@ -237,9 +237,13 @@ fun AddScreen(
                             navController.navigateUp()
                         },
                         shape = RoundedCornerShape(32.dp),
+                        enabled = textState.text.isNotEmpty(),
                         modifier = Modifier
                             .align(Alignment.End)
-                            .padding(4.dp)
+                            .padding(4.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            backgroundColor = if (textState.text.isNotEmpty()) MaterialTheme.colors.primary else Color.DarkGray
+                        )
                     ) {
                         Row(
                             modifier = Modifier.padding(8.dp),
