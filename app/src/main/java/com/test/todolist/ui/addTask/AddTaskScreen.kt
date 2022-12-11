@@ -3,9 +3,7 @@ package com.test.todolist.ui.addTask
 import android.app.DatePickerDialog
 import android.content.Context
 import android.widget.DatePicker
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -105,9 +104,7 @@ fun AddScreen(
                         onValueChange = { fieldValue -> textState = fieldValue },
                         modifier = Modifier
                             .focusRequester(focusRequester)
-                            .fillMaxWidth()
-                            .height(240.dp)
-                            .padding(top = 36.dp),
+                            .fillMaxWidth(),
                         colors = TextFieldDefaults.textFieldColors(
                             backgroundColor = Color.Transparent,
                             focusedIndicatorColor = Color.Transparent,
@@ -116,18 +113,56 @@ fun AddScreen(
                         ),
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Text,
-                            imeAction = ImeAction.Done
+                            imeAction = ImeAction.Next
                         ),
-                        keyboardActions = KeyboardActions(onDone = {
-                            localFocusManager.clearFocus()
+                        keyboardActions = KeyboardActions(onNext = {
+                            localFocusManager.moveFocus(FocusDirection.Down)
                         }),
                         placeholder = { Text(text = "Enter new task", fontSize = 24.sp) },
                         singleLine = true
                     )
+                    var descriptionState by remember { mutableStateOf(TextFieldValue()) }
+                    val scroll = rememberScrollState(0)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(160.dp)
+                            .border(
+                                BorderStroke(1.dp, Color.LightGray),
+                                shape = MaterialTheme.shapes.medium
+                            )
+                    ) {
+                        TextField(
+                            value = descriptionState,
+                            textStyle = TextStyle.Default.copy(fontSize = 14.sp),
+                            onValueChange = { fieldValue -> descriptionState = fieldValue },
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(scroll),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Text,
+                                imeAction = ImeAction.Next
+                            ),
+                            keyboardActions = KeyboardActions(onNext = {
+                                localFocusManager.clearFocus()
+                            }),
+                            placeholder = {
+                                Text(
+                                    text = "Description(optional)",
+                                    fontSize = 14.sp
+                                )
+                            },
+                            colors = TextFieldDefaults.textFieldColors(
+                                backgroundColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                disabledIndicatorColor = Color.Transparent
+                            )
+                        )
+                    }
                     LaunchedEffect(Unit) {
                         focusRequester.requestFocus()
                     }
-                    Spacer(modifier = Modifier.height(24.dp))
                     Row(
                         modifier = Modifier.padding(8.dp),
                         horizontalArrangement = Arrangement.Start,
@@ -197,7 +232,7 @@ fun AddScreen(
                             viewModel.addToDoEntry(
                                 selectedCategory.id,
                                 textState.text,
-                                "",
+                                descriptionState.text,
                                 selectedDate.value
                             )
                             navController.navigateUp()

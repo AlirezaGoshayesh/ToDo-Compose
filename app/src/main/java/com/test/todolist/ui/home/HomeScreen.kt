@@ -1,5 +1,6 @@
 package com.test.todolist.ui.home
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -15,11 +16,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Analytics
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -31,8 +34,12 @@ import androidx.navigation.NavController
 import com.test.todolist.data.models.ToDoCategory
 import com.test.todolist.data.models.ToDoEntry
 import com.test.todolist.domain.base.Resource
+import com.test.todolist.ui.MenuItem
 import com.test.todolist.ui.Screen
 import com.test.todolist.ui.addCategory.AddCategoryDialog
+import com.test.todolist.ui.navigationDrawer.DrawerBody
+import com.test.todolist.ui.navigationDrawer.DrawerHeader
+import com.test.todolist.ui.theme.Blue900
 import com.test.todolist.utils.filterTodayAndConvertToPairs
 import kotlinx.coroutines.launch
 import java.util.*
@@ -46,108 +53,137 @@ fun HomeScreen(
     val canAddTask = remember {
         mutableStateOf(false)
     }
-    Scaffold(scaffoldState = scaffoldState, topBar = {
-        TopAppBar(
-            title = {
-            },
-            navigationIcon = {
-                IconButton(onClick = { /*TODO*/ }) {
-                    Icon(
-                        imageVector = Icons.Default.DragHandle,
-                        contentDescription = null,
-                        tint = Color.Gray
-                    )
-                }
-            },
-            actions = {
-                IconButton(onClick = { /*TODO*/ }) {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = null,
-                        tint = Color.Gray
-                    )
-                }
-                IconButton(onClick = { /*TODO*/ }) {
-                    Icon(
-                        imageVector = Icons.Outlined.Notifications,
-                        contentDescription = null,
-                        tint = Color.Gray
-                    )
-                }
-            },
-            backgroundColor = MaterialTheme.colors.background,
-            contentColor = MaterialTheme.colors.onBackground,
-            elevation = 0.dp
-        )
-    }, floatingActionButtonPosition = FabPosition.End, floatingActionButton = {
-        FloatingActionButton(
-            backgroundColor = MaterialTheme.colors.primary,
-            contentColor = MaterialTheme.colors.onPrimary,
-            onClick = {
-                if (canAddTask.value)
-                    navController.navigate(Screen.AddScreen.route)
-                else
-                    coroutineScope.launch {
-                        scaffoldState.snackbarHostState.showSnackbar(
-                            message = "First, add a category!"
+    Scaffold(
+        scaffoldState = scaffoldState,
+        topBar = {
+            TopAppBar(
+                title = {
+                },
+                navigationIcon = {
+                    IconButton(onClick = {
+                        coroutineScope.launch {
+                            scaffoldState.drawerState.open()
+                        }
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.DragHandle,
+                            contentDescription = null,
+                            tint = Color.Gray
                         )
                     }
-            }) {
-            Icon(imageVector = Icons.Default.Add, contentDescription = "fab icon")
-        }
-    }, content = {
-        Column(
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.Top,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(it)
-                .padding(12.dp)
-                .background(MaterialTheme.colors.background)
-        ) {
-            Text(
-                text = "What's my task!?",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-            Spacer(modifier = Modifier.height(36.dp))
-            val entries by viewModel.toDoEntries.collectAsState()
-            when (entries) {
-                is Resource.Error -> ErrorBox(
-                    text = (entries as Resource.Error).errorModel.getErrorMessage()
-                )
-                is Resource.Loading -> Loading()
-                is Resource.Success -> {
-                    var openAddCategoryDialog by remember { mutableStateOf(false) }
-                    CategoriesSection(
-                        allData = (entries as Resource.Success).data,
-                        canAddTask,
-                        onClick = {
-                            openAddCategoryDialog = true
-                        })
-                    if (openAddCategoryDialog)
-                        AddCategoryDialog(
-                            onClick = { name ->
-                                viewModel.addToDoCategory(name = name)
-                                openAddCategoryDialog = false
-                            },
-                            onDismiss = { openAddCategoryDialog = false },
-                            categories = (entries as Resource.Success).data.keys.map { toDoCategory ->
-                                toDoCategory.name.lowercase(
-                                    Locale.ROOT
-                                )
-                            }
+                },
+                actions = {
+                    IconButton(onClick = { /*TODO*/ }) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = null,
+                            tint = Color.Gray
                         )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    TodayToDoList(
-                        todayData = (entries as Resource.Success).data.filterTodayAndConvertToPairs(),
-                        onClick = { toDoEntry ->
-                            viewModel.editToDoEntry(toDoEntry)
-                        })
+                    }
+                    IconButton(onClick = { /*TODO*/ }) {
+                        Icon(
+                            imageVector = Icons.Outlined.Notifications,
+                            contentDescription = null,
+                            tint = Color.Gray
+                        )
+                    }
+                },
+                backgroundColor = MaterialTheme.colors.background,
+                contentColor = MaterialTheme.colors.onBackground,
+                elevation = 0.dp
+            )
+        },
+        drawerContent = {
+            DrawerHeader("Your Name", onBackClick = {
+                coroutineScope.launch {
+                    scaffoldState.drawerState.close()
+                }
+            })
+            DrawerBody(
+                items = listOf(
+                    MenuItem(
+                        id = "analytics",
+                        title = "Analytics",
+                        icon = Icons.Outlined.Analytics,
+                        contentDescription = "Analytics"
+                    )
+                ), onItemClick = { menuItem ->
+                }
+            )
+        },
+        drawerBackgroundColor = Blue900,
+        drawerGesturesEnabled = scaffoldState.drawerState.isOpen,
+        floatingActionButtonPosition = FabPosition.End,
+        floatingActionButton = {
+            FloatingActionButton(
+                backgroundColor = MaterialTheme.colors.primary,
+                contentColor = MaterialTheme.colors.onPrimary,
+                onClick = {
+                    if (canAddTask.value)
+                        navController.navigate(Screen.AddScreen.route)
+                    else
+                        coroutineScope.launch {
+                            scaffoldState.snackbarHostState.showSnackbar(
+                                message = "First, add a category!"
+                            )
+                        }
+                }) {
+                Icon(imageVector = Icons.Default.Add, contentDescription = "fab icon")
+            }
+        },
+        content = {
+            Column(
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.Top,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(it)
+                    .padding(12.dp)
+                    .background(MaterialTheme.colors.background)
+            ) {
+                Text(
+                    text = "What's my task!?",
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.height(36.dp))
+                val entries by viewModel.toDoEntries.collectAsState()
+                when (entries) {
+                    is Resource.Error -> ErrorBox(
+                        text = (entries as Resource.Error).errorModel.getErrorMessage()
+                    )
+                    is Resource.Loading -> Loading()
+                    is Resource.Success -> {
+                        var openAddCategoryDialog by remember { mutableStateOf(false) }
+                        CategoriesSection(
+                            allData = (entries as Resource.Success).data,
+                            canAddTask,
+                            onClick = {
+                                openAddCategoryDialog = true
+                            })
+                        if (openAddCategoryDialog)
+                            AddCategoryDialog(
+                                onClick = { name ->
+                                    viewModel.addToDoCategory(name = name)
+                                    openAddCategoryDialog = false
+                                },
+                                onDismiss = { openAddCategoryDialog = false },
+                                categories = (entries as Resource.Success).data.keys.map { toDoCategory ->
+                                    toDoCategory.name.lowercase(
+                                        Locale.ROOT
+                                    )
+                                }
+                            )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        TodayToDoList(
+                            todayData = (entries as Resource.Success).data.filterTodayAndConvertToPairs(),
+                            onClick = { toDoEntry ->
+                                viewModel.editToDoEntry(toDoEntry)
+                            })
+                    }
                 }
             }
-        }
-    })
+        })
 }
 
 @Composable
@@ -348,41 +384,75 @@ fun ToDoSection(
         shape = RoundedCornerShape(16.dp),
         elevation = 0.dp
     ) {
-        Row(
+        var isExpanded by remember {
+            mutableStateOf(false)
+        }
+        val rotateState by animateFloatAsState(
+            targetValue = if (isExpanded) 180F else 0F,
+        )
+        Column(
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically,
+                .padding(16.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .size(24.dp)
-                    .background(if (isCheck) Color.LightGray else Color.Transparent, CircleShape)
-                    .border(
-                        if (isCheck) BorderStroke(
-                            0.dp,
-                            Color.Transparent
-                        ) else BorderStroke(2.dp, Color(todo.first.color)), CircleShape
-                    )
-                    .clickable {
-                        onClick(todo.second)
-                    },
-                contentAlignment = Alignment.CenterStart
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (isCheck)
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .background(
+                            if (isCheck) Color.LightGray else Color.Transparent,
+                            CircleShape
+                        )
+                        .border(
+                            if (isCheck) BorderStroke(
+                                0.dp,
+                                Color.Transparent
+                            ) else BorderStroke(2.dp, Color(todo.first.color)), CircleShape
+                        )
+                        .clickable {
+                            onClick(todo.second)
+                        },
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    if (isCheck)
+                        Icon(
+                            Icons.Default.Check,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    fontSize = 16.sp,
+                    text = todo.second.title,
+                    textDecoration = if (isCheck) TextDecoration.LineThrough else TextDecoration.None
+                )
+                if (todo.second.desc.isNotEmpty()) {
+                    Spacer(modifier = Modifier.weight(1f))
                     Icon(
-                        Icons.Default.Check,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.align(Alignment.Center)
+                        modifier = Modifier
+                            .clickable { isExpanded = !isExpanded }
+                            .rotate(rotateState),
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = null
                     )
+                }
             }
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(
-                fontSize = 16.sp,
-                text = todo.second.title,
-                textDecoration = if (isCheck) TextDecoration.LineThrough else TextDecoration.None
-            )
+            AnimatedVisibility(visible = isExpanded) {
+                Text(
+                    text = todo.second.desc,
+                    fontSize = 14.sp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                )
+            }
         }
     }
 }
