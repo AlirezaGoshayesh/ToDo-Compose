@@ -1,8 +1,5 @@
 package com.test.todolist.ui.addTask
 
-import android.app.DatePickerDialog
-import android.content.Context
-import android.widget.DatePicker
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -38,6 +35,7 @@ import com.test.todolist.domain.base.Resource
 import com.test.todolist.ui.home.ErrorBox
 import com.test.todolist.ui.home.Loading
 import com.test.todolist.ui.home.TasksVM
+import com.test.todolist.utils.DateUtils.makeDatePicker
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -95,7 +93,8 @@ fun AddScreen(
                     var selectedCategory by remember {
                         mutableStateOf((categories as Resource.Success<List<ToDoCategory>>).data.first())
                     }
-                    val mDatePickerDialog = makeDatePicker(selectedDate, LocalContext.current)
+                    val mDatePickerDialog =
+                        makeDatePicker(selectedDate, LocalContext.current, isMinDateToday = true)
                     val focusRequester = remember { FocusRequester() }
                     var textState by remember { mutableStateOf(TextFieldValue()) }
                     TextField(
@@ -270,24 +269,4 @@ fun AddScreen(
         }
     })
 
-}
-
-fun makeDatePicker(selectedDate: MutableState<Date>, context: Context): DatePickerDialog {
-    val mCalendar = Calendar.getInstance()
-    val mYear: Int = mCalendar.get(Calendar.YEAR)
-    val mMonth: Int = mCalendar.get(Calendar.MONTH)
-    val mDay: Int = mCalendar.get(Calendar.DAY_OF_MONTH)
-    val mDatePickerDialog = DatePickerDialog(
-        context,
-        { _: DatePicker, year: Int, month: Int, dayOfMonth: Int ->
-            mCalendar.apply {
-                set(Calendar.YEAR, year)
-                set(Calendar.MONTH, month)
-                set(Calendar.DAY_OF_MONTH, dayOfMonth)
-            }
-            selectedDate.value = mCalendar.time
-        }, mYear, mMonth, mDay
-    )
-    mDatePickerDialog.datePicker.minDate = System.currentTimeMillis() - 1000
-    return mDatePickerDialog
 }

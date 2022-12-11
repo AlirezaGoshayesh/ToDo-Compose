@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
@@ -40,8 +41,11 @@ import com.test.todolist.ui.addCategory.AddCategoryDialog
 import com.test.todolist.ui.navigationDrawer.DrawerBody
 import com.test.todolist.ui.navigationDrawer.DrawerHeader
 import com.test.todolist.ui.theme.Blue900
-import com.test.todolist.utils.filterTodayAndConvertToPairs
+import com.test.todolist.utils.DateUtils
+import com.test.todolist.utils.DateUtils.calculateDateText
+import com.test.todolist.utils.filterDayAndConvertToPairs
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
@@ -53,6 +57,10 @@ fun HomeScreen(
     val canAddTask = remember {
         mutableStateOf(false)
     }
+    val selectedDate = remember {
+        mutableStateOf(Date())
+    }
+    val mDatePickerDialog = DateUtils.makeDatePicker(selectedDate, LocalContext.current)
     Scaffold(
         scaffoldState = scaffoldState,
         topBar = {
@@ -73,9 +81,11 @@ fun HomeScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /*TODO*/ }) {
+                    IconButton(onClick = {
+                        mDatePickerDialog.show()
+                    }) {
                         Icon(
-                            imageVector = Icons.Default.Search,
+                            imageVector = Icons.Default.DateRange,
                             contentDescription = null,
                             tint = Color.Gray
                         )
@@ -176,7 +186,10 @@ fun HomeScreen(
                             )
                         Spacer(modifier = Modifier.height(24.dp))
                         TodayToDoList(
-                            todayData = (entries as Resource.Success).data.filterTodayAndConvertToPairs(),
+                            dateText = calculateDateText(selectedDate.value),
+                            todayData = (entries as Resource.Success).data.filterDayAndConvertToPairs(
+                                selectedDate.value
+                            ),
                             onClick = { toDoEntry ->
                                 viewModel.editToDoEntry(toDoEntry)
                             })
@@ -335,6 +348,7 @@ fun Loading(modifier: Modifier = Modifier) {
 
 @Composable
 fun TodayToDoList(
+    dateText: String,
     todayData: List<Pair<ToDoCategory, ToDoEntry>>,
     onClick: (todo: ToDoEntry) -> Unit,
     modifier: Modifier = Modifier
@@ -345,7 +359,7 @@ fun TodayToDoList(
         verticalArrangement = Arrangement.Top,
     ) {
         Text(
-            text = ("today's tasks").uppercase(),
+            text = ("$dateText tasks").uppercase(),
             color = Color.Gray,
             fontSize = 14.sp
         )
