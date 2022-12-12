@@ -70,7 +70,7 @@ fun AddCategoryDialog(
                         unfocusedIndicatorColor = Color.Transparent,
                         disabledIndicatorColor = Color.Transparent
                     ),
-                    placeholder = { Text(text = "Enter category name", fontSize = 20.sp, modifier = Modifier.fillMaxWidth()) },
+                    placeholder = { Text(text = "Category name", fontSize = 20.sp, modifier = Modifier.fillMaxWidth()) },
                     singleLine = true,
                     trailingIcon = {
                         if (error.isNotEmpty() && isValueChanged)

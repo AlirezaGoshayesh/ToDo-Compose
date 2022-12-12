@@ -8,9 +8,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -20,7 +18,6 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Analytics
-import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,9 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
@@ -42,6 +37,8 @@ import androidx.navigation.NavController
 import com.test.todolist.data.models.ToDoCategory
 import com.test.todolist.data.models.ToDoEntry
 import com.test.todolist.domain.base.Resource
+import com.test.todolist.ui.ErrorBox
+import com.test.todolist.ui.Loading
 import com.test.todolist.ui.MenuItem
 import com.test.todolist.ui.Screen
 import com.test.todolist.ui.addCategory.AddCategoryDialog
@@ -50,10 +47,10 @@ import com.test.todolist.ui.navigationDrawer.DrawerHeader
 import com.test.todolist.ui.theme.Blue900
 import com.test.todolist.utils.DateUtils
 import com.test.todolist.utils.DateUtils.calculateDateText
-import com.test.todolist.utils.filterDayAndConvertToPairs
+import com.test.todolist.utils.filterDateAndConvertToListOfPairs
+import com.test.todolist.utils.getAppName
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -100,13 +97,6 @@ fun HomeScreen(
                             tint = Color.Gray
                         )
                     }
-                    IconButton(onClick = { /*TODO*/ }) {
-                        Icon(
-                            imageVector = Icons.Outlined.Notifications,
-                            contentDescription = null,
-                            tint = Color.Gray
-                        )
-                    }
                 },
                 backgroundColor = MaterialTheme.colors.background,
                 contentColor = MaterialTheme.colors.onBackground,
@@ -114,7 +104,7 @@ fun HomeScreen(
             )
         },
         drawerContent = {
-            DrawerHeader("Your Name", onBackClick = {
+            DrawerHeader(LocalContext.current.getAppName(), onBackClick = {
                 coroutineScope.launch {
                     scaffoldState.drawerState.close()
                 }
@@ -128,6 +118,11 @@ fun HomeScreen(
                         contentDescription = "Analytics"
                     )
                 ), onItemClick = { menuItem ->
+                    if (menuItem.id == "analytics")
+                        navController.navigate(Screen.AnalyticsScreen.route)
+                    coroutineScope.launch {
+                        scaffoldState.drawerState.close()
+                    }
                 }
             )
         },
@@ -195,9 +190,9 @@ fun HomeScreen(
                                 }
                             )
                         Spacer(modifier = Modifier.height(24.dp))
-                        TodayToDoList(
+                        ToDoList(
                             dateText = calculateDateText(selectedDate.value),
-                            todayData = (entries as Resource.Success).data.filterDayAndConvertToPairs(
+                            dailyData = (entries as Resource.Success).data.filterDateAndConvertToListOfPairs(
                                 selectedDate.value
                             ),
                             onClick = { toDoEntry ->
@@ -326,44 +321,9 @@ fun CategorySection(category: ToDoCategory, tasks: List<ToDoEntry>, modifier: Mo
 }
 
 @Composable
-fun ErrorBox(
-    text: String,
-    modifier: Modifier = Modifier,
-    backgroundColor: Color = MaterialTheme.colors.error,
-    textColor: Color = MaterialTheme.colors.onError
-) {
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(16.dp), shape = CircleShape, color = backgroundColor
-    ) {
-        Text(
-            text = text,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            textAlign = TextAlign.Center,
-            color = textColor
-        )
-    }
-}
-
-@Composable
-fun Loading(modifier: Modifier = Modifier) {
-    Box(modifier = modifier.fillMaxWidth()) {
-        CircularProgressIndicator(
-            modifier
-                .size(64.dp)
-                .align(Alignment.Center)
-                .padding(8.dp)
-        )
-    }
-}
-
-@Composable
-fun TodayToDoList(
+fun ToDoList(
     dateText: String,
-    todayData: List<Pair<ToDoCategory, ToDoEntry>>,
+    dailyData: List<Pair<ToDoCategory, ToDoEntry>>,
     onClick: (todo: ToDoEntry) -> Unit,
     onDelete: (todo: ToDoEntry) -> Unit,
     modifier: Modifier = Modifier
@@ -379,25 +339,26 @@ fun TodayToDoList(
             fontSize = 14.sp
         )
         Spacer(modifier = Modifier.height(4.dp))
-    }
-    if (todayData.isEmpty()) ErrorBox(
-        text = "No Entries Found",
-        backgroundColor = Color.Transparent,
-        textColor = MaterialTheme.colors.primary
-    )
-    else LazyColumn(
-        modifier = modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        items(todayData.size) {
-            ToDoSection(
-                todo = todayData[it],
-                onClick = onClick,
-                onDelete = onDelete,
-                modifier = Modifier.fillMaxWidth()
-            )
+
+        if (dailyData.isEmpty()) ErrorBox(
+            text = "No Entries Found",
+            backgroundColor = Color.Transparent,
+            textColor = MaterialTheme.colors.primary
+        )
+        else LazyColumn(
+            modifier = modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            items(dailyData.size) {
+                ToDoSection(
+                    todo = dailyData[it],
+                    onClick = onClick,
+                    onDelete = onDelete,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
     }
 }
@@ -419,7 +380,7 @@ fun ToDoSection(
     var offsetX by remember { mutableStateOf(0f) }
     LaunchedEffect(key1 = isDragged) {
         if (isDragged) {
-            delay(3000)
+            delay(1500)
             onDelete(todo.second)
         }
     }

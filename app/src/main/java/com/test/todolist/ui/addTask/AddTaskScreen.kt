@@ -32,8 +32,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.test.todolist.data.models.ToDoCategory
 import com.test.todolist.domain.base.Resource
-import com.test.todolist.ui.home.ErrorBox
-import com.test.todolist.ui.home.Loading
+import com.test.todolist.ui.ErrorBox
+import com.test.todolist.ui.Loading
 import com.test.todolist.ui.home.TasksVM
 import com.test.todolist.utils.DateUtils.makeDatePicker
 import java.text.SimpleDateFormat

@@ -32,7 +32,8 @@ object DateUtils {
     fun makeDatePicker(
         selectedDate: MutableState<Date>,
         context: Context,
-        isMinDateToday: Boolean = false
+        isMinDateToday: Boolean = false,
+        isMaxDateToday: Boolean = false
     ): DatePickerDialog {
         val mCalendar = Calendar.getInstance()
         val mYear: Int = mCalendar.get(Calendar.YEAR)
@@ -51,6 +52,8 @@ object DateUtils {
         )
         if (isMinDateToday)
             mDatePickerDialog.datePicker.minDate = System.currentTimeMillis() - 1000
+        if (isMaxDateToday)
+            mDatePickerDialog.datePicker.maxDate = System.currentTimeMillis() - 1000
         return mDatePickerDialog
     }
 
