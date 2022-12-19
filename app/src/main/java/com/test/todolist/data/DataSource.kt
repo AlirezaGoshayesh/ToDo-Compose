@@ -10,7 +10,7 @@ interface DataSource {
 
         suspend fun getToDoEntries(): Map<ToDoCategory, List<ToDoEntry>>
 
-        suspend fun getToDoEntry(id: Int): ToDoEntry
+        suspend fun getToDoEntry(id: Int): ToDoEntry?
 
         suspend fun addToDoEntry(
             categoryId: Int,

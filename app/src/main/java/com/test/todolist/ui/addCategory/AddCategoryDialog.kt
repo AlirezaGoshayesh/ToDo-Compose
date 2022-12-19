@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
@@ -63,7 +64,8 @@ fun AddCategoryDialog(
                     modifier = Modifier
                         .focusRequester(focusRequester)
                         .fillMaxWidth()
-                        .padding(4.dp),
+                        .padding(4.dp)
+                        .testTag("task category input"),
                     colors = TextFieldDefaults.textFieldColors(
                         backgroundColor = Color.Transparent,
                         focusedIndicatorColor = Color.Transparent,

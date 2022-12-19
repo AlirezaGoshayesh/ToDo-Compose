@@ -263,9 +263,9 @@ fun AddCategorySection(onClick: () -> Unit, modifier: Modifier = Modifier) {
     ) {
         Icon(
             imageVector = Icons.Default.Add,
-            contentDescription = null,
+            contentDescription = "add category",
             modifier = Modifier.padding(8.dp),
-            tint = MaterialTheme.colors.primary
+            tint = MaterialTheme.colors.primary,
         )
     }
 }

@@ -9,8 +9,8 @@ import javax.inject.Inject
 class GetTodoEntry @Inject constructor(
     private val repository: Repository,
     errorHandler: IErrorHandler
-) : UseCase<Int, ToDoEntry>(errorHandler) {
-    override suspend fun execute(parameters: Int): ToDoEntry {
+) : UseCase<Int, ToDoEntry?>(errorHandler) {
+    override suspend fun execute(parameters: Int): ToDoEntry? {
         return repository.getToDoEntry(parameters)
     }
 }

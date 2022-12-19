@@ -17,7 +17,7 @@ class LocalDataSourceImpl @Inject constructor(
     override suspend fun getToDoEntries(): Map<ToDoCategory, List<ToDoEntry>> =
         toDoEntryToDoCategoryDao.getAll()
 
-    override suspend fun getToDoEntry(id: Int): ToDoEntry = toDoEntryDao.getEntry(id)
+    override suspend fun getToDoEntry(id: Int): ToDoEntry? = toDoEntryDao.getEntry(id)
 
     override suspend fun addToDoEntry(categoryId: Int, title: String, desc: String, date: Date) =
         toDoEntryDao.insert(

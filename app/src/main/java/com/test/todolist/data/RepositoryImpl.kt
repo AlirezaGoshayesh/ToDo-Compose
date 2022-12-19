@@ -12,7 +12,7 @@ class RepositoryImpl @Inject constructor(
     override suspend fun getToDoEntries(): Map<ToDoCategory, List<ToDoEntry>> =
         localDataSource.getToDoEntries()
 
-    override suspend fun getToDoEntry(id: Int): ToDoEntry =
+    override suspend fun getToDoEntry(id: Int): ToDoEntry? =
         localDataSource.getToDoEntry(id)
 
     override suspend fun addToDoEntry(
