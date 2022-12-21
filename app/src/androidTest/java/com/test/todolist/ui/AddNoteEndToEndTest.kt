@@ -1,7 +1,5 @@
 package com.test.todolist.ui
 
-import android.os.Handler
-import android.os.Looper
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.remember
 import androidx.compose.ui.test.*
@@ -62,13 +60,6 @@ class AddNoteEndToEndTest {
 
     @Test
     fun addNewTask_getErrorForCategory_CreateNewCategory_AddNewTaskAgain() {
-        Handler(Looper.getMainLooper()).postDelayed({
 
-//
-//            composeRule.onNodeWithTag("task category input").performTextInput("test_title")
-//            composeRule.onNodeWithText("Confirm").performClick()
-//
-//            composeRule.onNodeWithText("test_title").assertIsDisplayed()
-        }, 5000)
     }
 }
