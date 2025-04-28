@@ -31,6 +31,8 @@ fun AnalyticsScreen(
     navController: NavController, viewModel: TasksVM
 ) {
     val scaffoldState = rememberScaffoldState()
+    val state by viewModel.state.collectAsState()
+    
     Scaffold(scaffoldState = scaffoldState, topBar = {
         TopAppBar(
             title = {},
@@ -65,15 +67,13 @@ fun AnalyticsScreen(
                 fontWeight = FontWeight.SemiBold
             )
             Spacer(modifier = Modifier.height(36.dp))
-            val entries by viewModel.toDoEntries.collectAsState()
-            when (entries) {
-                is Resource.Error -> ErrorBox(
-                    text = (entries as Resource.Error).errorModel.getErrorMessage()
+            when (state) {
+                is TasksState.Error -> ErrorBox(
+                    text = (state as TasksState.Error).message
                 )
-                is Resource.Loading -> Loading()
-                is Resource.Success -> {
-                    val data =
-                        (entries as Resource.Success).data.filterDateAndConvertToListOfPairs(date = null)
+                is TasksState.Loading -> Loading()
+                is TasksState.Loaded -> {
+                    val data = (state as TasksState.Loaded).entries.filterDateAndConvertToListOfPairs(date = null)
                     val doneCount = data.map { entryPair -> entryPair.second }
                         .filter { toDoEntry -> toDoEntry.isDone }.size
                     val undoneCount = data.size - doneCount

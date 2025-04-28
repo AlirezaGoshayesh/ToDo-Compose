@@ -61,13 +61,11 @@ fun HomeScreen(
 ) {
     val scaffoldState = rememberScaffoldState()
     val coroutineScope = rememberCoroutineScope()
-    val canAddTask = remember {
-        mutableStateOf(false)
-    }
-    val selectedDate = remember {
-        mutableStateOf(Date())
-    }
+    val canAddTask = remember { mutableStateOf(false) }
+    val selectedDate = remember { mutableStateOf(Date()) }
     val mDatePickerDialog = DateUtils.makeDatePicker(selectedDate, LocalContext.current)
+    val state by viewModel.state.collectAsState()
+    
     Scaffold(
         scaffoldState = scaffoldState,
         topBar = {
@@ -162,16 +160,16 @@ fun HomeScreen(
                     fontWeight = FontWeight.SemiBold
                 )
                 Spacer(modifier = Modifier.height(36.dp))
-                val entries by viewModel.toDoEntries.collectAsState()
-                when (entries) {
-                    is Resource.Error -> ErrorBox(
-                        text = (entries as Resource.Error).errorModel.getErrorMessage()
+                when (state) {
+                    is TasksState.Error -> ErrorBox(
+                        text = (state as TasksState.Error).message
                     )
-                    is Resource.Loading -> Loading()
-                    is Resource.Success -> {
+                    is TasksState.Loading -> Loading()
+                    is TasksState.Loaded -> {
+                        val loaded = state as TasksState.Loaded
                         var openAddCategoryDialog by remember { mutableStateOf(false) }
                         CategoriesSection(
-                            allData = (entries as Resource.Success).data,
+                            allData = loaded.entries,
                             canAddTask,
                             onClick = {
                                 openAddCategoryDialog = true
@@ -179,27 +177,25 @@ fun HomeScreen(
                         if (openAddCategoryDialog)
                             AddCategoryDialog(
                                 onClick = { name ->
-                                    viewModel.addToDoCategory(name = name)
+                                    viewModel.processIntent(TasksIntent.AddCategory(name))
                                     openAddCategoryDialog = false
                                 },
                                 onDismiss = { openAddCategoryDialog = false },
-                                categories = (entries as Resource.Success).data.keys.map { toDoCategory ->
-                                    toDoCategory.name.lowercase(
-                                        Locale.ROOT
-                                    )
+                                categories = loaded.entries.keys.map { toDoCategory ->
+                                    toDoCategory.name.lowercase(Locale.ROOT)
                                 }
                             )
                         Spacer(modifier = Modifier.height(24.dp))
                         ToDoList(
                             dateText = calculateDateText(selectedDate.value),
-                            dailyData = (entries as Resource.Success).data.filterDateAndConvertToListOfPairs(
+                            dailyData = loaded.entries.filterDateAndConvertToListOfPairs(
                                 selectedDate.value
                             ),
                             onClick = { toDoEntry ->
-                                viewModel.editToDoEntry(toDoEntry)
+                                viewModel.processIntent(TasksIntent.EditEntry(toDoEntry))
                             },
                             onDelete = { toDoEntry ->
-                                viewModel.deleteTodo(toDoEntry)
+                                viewModel.processIntent(TasksIntent.DeleteEntry(toDoEntry))
                             }
                         )
                     }

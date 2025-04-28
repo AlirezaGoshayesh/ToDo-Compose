@@ -7,7 +7,6 @@ import com.test.todolist.data.models.ToDoEntry
 import com.test.todolist.domain.base.Resource
 import com.test.todolist.domain.usecases.*
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,85 +24,98 @@ class TasksVM @Inject constructor(
     private val deleteTodoEntry: DeleteTodoEntry
 ) : ViewModel() {
 
-    private val _toDoEntries =
-        MutableStateFlow<Resource<Map<ToDoCategory, List<ToDoEntry>>>>(Resource.Loading)
-    val toDoEntries: StateFlow<Resource<Map<ToDoCategory, List<ToDoEntry>>>> get() = _toDoEntries.asStateFlow()
-
-    private val _toDoCategories =
-        MutableStateFlow<Resource<List<ToDoCategory>>>(Resource.Loading)
-    val toDoCategories: StateFlow<Resource<List<ToDoCategory>>> get() = _toDoCategories.asStateFlow()
+    private val _state = MutableStateFlow<TasksState>(TasksState.Loading)
+    val state: StateFlow<TasksState> get() = _state.asStateFlow()
 
     init {
-        getToDoEntries()
+        processIntent(TasksIntent.LoadAll)
     }
 
-    /**
-     * Called to get all To Do Entries
-     */
-    private fun getToDoEntries() {
-        viewModelScope.launch {
-            _toDoEntries.value = Resource.Loading
-            delay(500)
-            _toDoEntries.value = getAllTodoEntries(Unit)
-        }
-
-    }
-
-    /**
-     * Called to get all To Do Categories
-     */
-    fun getCategories() {
-        viewModelScope.launch {
-            _toDoCategories.value = getTodoCategories(Unit)
-        }
-
-    }
-
-    /**
-     * Called to add a To Do Entries
-     */
-    fun addToDoEntry(
-        toDoCategoryId: Int,
-        title: String,
-        desc: String,
-        date: Date
-    ) {
-        viewModelScope.launch {
-            addTodoEntry(com.test.todolist.domain.models.ToDo(toDoCategoryId, title, desc, date))
-            getToDoEntries()
-        }
-
-    }
-
-    /**
-     * Called to edit To Do Entry
-     */
-    fun editToDoEntry(toDoEntry: ToDoEntry) {
-        viewModelScope.launch {
-            toDoEntry.isDone = !toDoEntry.isDone
-            editTodoEntry(toDoEntry)
-            getToDoEntries()
+    fun processIntent(intent: TasksIntent) {
+        when (intent) {
+            is TasksIntent.LoadAll -> {
+                loadAll()
+            }
+            is TasksIntent.LoadCategories -> {
+                loadCategories()
+            }
+            is TasksIntent.AddEntry -> {
+                addEntry(intent.categoryId, intent.title, intent.desc, intent.date)
+            }
+            is TasksIntent.EditEntry -> {
+                editEntry(intent.entry)
+            }
+            is TasksIntent.AddCategory -> {
+                addCategory(intent.name)
+            }
+            is TasksIntent.DeleteEntry -> {
+                deleteEntry(intent.entry)
+            }
         }
     }
 
-    /**
-     * Called to add To Do Category
-     */
-    fun addToDoCategory(name: String) {
+    private fun loadAll() {
+        viewModelScope.launch {
+            _state.value = TasksState.Loading
+            val entriesResult = getAllTodoEntries(Unit)
+            val categoriesResult = getTodoCategories(Unit)
+            if (entriesResult is Resource.Success && categoriesResult is Resource.Success) {
+                _state.value = TasksState.Loaded(
+                    entries = entriesResult.data,
+                    categories = categoriesResult.data
+                )
+            } else if (entriesResult is Resource.Error) {
+                _state.value = TasksState.Error(entriesResult.errorModel.getErrorMessage())
+            } else if (categoriesResult is Resource.Error) {
+                _state.value = TasksState.Error(categoriesResult.errorModel.getErrorMessage())
+            } else {
+                _state.value = TasksState.Error("Unknown error")
+            }
+        }
+    }
+
+    private fun loadCategories() {
+        viewModelScope.launch {
+            _state.value = TasksState.Loading
+            val categoriesResult = getTodoCategories(Unit)
+            if (categoriesResult is Resource.Success) {
+                val currentEntries = (state.value as? TasksState.Loaded)?.entries ?: emptyMap()
+                _state.value = TasksState.Loaded(
+                    entries = currentEntries,
+                    categories = categoriesResult.data
+                )
+            } else if (categoriesResult is Resource.Error) {
+                _state.value = TasksState.Error(categoriesResult.errorModel.getErrorMessage())
+            }
+        }
+    }
+
+    private fun addEntry(categoryId: Int, title: String, desc: String, date: Date) {
+        viewModelScope.launch {
+            addTodoEntry(com.test.todolist.domain.models.ToDo(categoryId, title, desc, date))
+            processIntent(TasksIntent.LoadAll)
+        }
+    }
+
+    private fun editEntry(toDoEntry: ToDoEntry) {
+        viewModelScope.launch {
+            val updatedEntry = toDoEntry.copy(isDone = !toDoEntry.isDone)
+            editTodoEntry(updatedEntry)
+            processIntent(TasksIntent.LoadAll)
+        }
+    }
+
+    private fun addCategory(name: String) {
         viewModelScope.launch {
             addTodoCategory(name)
-            getToDoEntries()
+            processIntent(TasksIntent.LoadAll)
         }
     }
 
-    /**
-     * Called to delete To Do Entry
-     */
-    fun deleteTodo(todoEntry: ToDoEntry) {
+    private fun deleteEntry(todoEntry: ToDoEntry) {
         viewModelScope.launch {
             deleteTodoEntry(todoEntry)
-            getToDoEntries()
+            processIntent(TasksIntent.LoadAll)
         }
     }
-
 }

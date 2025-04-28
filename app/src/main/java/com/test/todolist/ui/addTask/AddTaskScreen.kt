@@ -31,9 +31,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.test.todolist.data.models.ToDoCategory
-import com.test.todolist.domain.base.Resource
 import com.test.todolist.ui.ErrorBox
 import com.test.todolist.ui.Loading
+import com.test.todolist.ui.home.TasksIntent
+import com.test.todolist.ui.home.TasksState
 import com.test.todolist.ui.home.TasksVM
 import com.test.todolist.utils.DateUtils.makeDatePicker
 import java.text.SimpleDateFormat
@@ -44,6 +45,12 @@ fun AddScreen(
     navController: NavController, viewModel: TasksVM
 ) {
     val scaffoldState = rememberScaffoldState()
+    val state by viewModel.state.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.processIntent(TasksIntent.LoadAll)
+    }
+
     Scaffold(scaffoldState = scaffoldState, topBar = {
         TopAppBar(
             title = {
@@ -68,30 +75,31 @@ fun AddScreen(
             modifier = Modifier.padding(8.dp)
         )
     }, content = {
-        viewModel.getCategories()
-        Column(
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(it)
-                .padding(16.dp)
-                .background(MaterialTheme.colors.background)
-        ) {
-            val categories by viewModel.toDoCategories.collectAsState()
-            when (categories) {
-                is Resource.Error -> ErrorBox(
-                    text = (categories as Resource.Error).errorModel.getErrorMessage()
-                )
-                is Resource.Loading -> Loading()
-                is Resource.Success -> {
+        when (state) {
+            is TasksState.Error -> ErrorBox(
+                text = (state as TasksState.Error).message
+            )
+            is TasksState.Loading -> Loading()
+            is TasksState.Loaded -> {
+                val loaded = state as TasksState.Loaded
+                if (loaded.categories.isEmpty()) {
+                    ErrorBox(text = "No categories available. Please add a category first.")
+                    return@Scaffold
+                }
+                Column(
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(it)
+                        .padding(16.dp)
+                        .background(MaterialTheme.colors.background)
+                ) {
                     val localFocusManager = LocalFocusManager.current
                     var openCategoriesDialog by remember { mutableStateOf(false) }
-                    val selectedDate = remember {
-                        mutableStateOf(Date())
-                    }
+                    val selectedDate = remember { mutableStateOf(Date()) }
                     var selectedCategory by remember {
-                        mutableStateOf((categories as Resource.Success<List<ToDoCategory>>).data.first())
+                        mutableStateOf(loaded.categories.first())
                     }
                     val mDatePickerDialog =
                         makeDatePicker(selectedDate, LocalContext.current, isMinDateToday = true)
@@ -228,11 +236,13 @@ fun AddScreen(
                     }
                     Button(
                         onClick = {
-                            viewModel.addToDoEntry(
-                                selectedCategory.id,
-                                textState.text,
-                                descriptionState.text,
-                                selectedDate.value
+                            viewModel.processIntent(
+                                TasksIntent.AddEntry(
+                                    selectedCategory.id,
+                                    textState.text,
+                                    descriptionState.text,
+                                    selectedDate.value
+                                )
                             )
                             navController.navigateUp()
                         },
@@ -266,11 +276,10 @@ fun AddScreen(
                                 openCategoriesDialog = false
                             },
                             onDismiss = { openCategoriesDialog = false },
-                            categories = (categories as Resource.Success<List<ToDoCategory>>).data
+                            categories = loaded.categories
                         )
                 }
             }
         }
     })
-
 }
